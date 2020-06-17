@@ -5,10 +5,19 @@
 @import '~@fortawesome/fontawesome-free/css/all.css';
 
 body {
+  height: 100vh;
+  background: rgb(32, 91, 92);
+  background: linear-gradient(
+    137deg,
+    rgba(32, 91, 92, 1) 0%,
+    rgba(133, 124, 103, 1) 100%
+  );
   font-family: Helvetica, Helvetica Neue, Arial, sans-serif;
   overflow-y: hidden;
 }
 
 h1 {
   font-size: 32px;
+  margin: 12px 0 8px;
+  color: white;
 }

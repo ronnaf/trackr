@@ -1,0 +1,18 @@
+.trackrButton {
+  margin-top: -4px;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: 0 4px 0 0 #c9c9c9;
+  outline: none;
+  font-weight: bold;
+}
+
+.trackrButton:hover {
+  background: #ebebeb;
+}
+
+.trackrButton:active {
+  background: #e4e4e4;
+  box-shadow: 0 2px 0 0 #c9c9c9;
+  transform: translate(0, 2px);
+}

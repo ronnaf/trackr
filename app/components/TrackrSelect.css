@@ -1,0 +1,9 @@
+.trackrSelect {
+  -moz-appearance: none;
+  -webkit-appearance: none;
+  -webkit-border-radius: 0;
+  border: none;
+  outline: none;
+  padding: 8px 12px;
+  border-radius: 2px;
+}

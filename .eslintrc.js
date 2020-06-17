@@ -2,7 +2,10 @@ module.exports = {
   extends: 'erb/typescript',
   rules: {
     // A temporary hack related to IDE not resolving correct package.json
-    'import/no-extraneous-dependencies': 'off'
+    'import/no-extraneous-dependencies': 'off',
+    'react/jsx-closing-bracket-location': 'off',
+    'react/jsx-props-no-spreading': 'off',
+    'react/prop-types': 'off'
   },
   settings: {
     'import/resolver': {
