@@ -16,3 +16,7 @@
   box-shadow: 0 2px 0 0 #c9c9c9;
   transform: translate(0, 2px);
 }
+
+.trackrButton:disabled {
+  background: white;
+}

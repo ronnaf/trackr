@@ -2,18 +2,12 @@
 import React from 'react';
 import styles from './TrackrButton.css';
 
-type Props = {
-  onClick: () => void;
-  style?: React.CSSProperties;
-};
-
-const TrackrButton: React.FC<Props> = ({ children, style, onClick }) => {
+const TrackrButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({
+  children,
+  ...rest
+}) => {
   return (
-    <button
-      type="button"
-      className={styles.trackrButton}
-      style={style}
-      onClick={onClick}>
+    <button {...rest} type="button" className={styles.trackrButton}>
       {children}
     </button>
   );
