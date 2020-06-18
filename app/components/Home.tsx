@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-use-before-define,react/jsx-one-expression-per-line */
 import React from 'react';
+import { Link } from 'react-router-dom';
 import TrackrButton from './TrackrButton';
 import TrackrSelect from './TrackrSelect';
 import TrackrInput from './TrackrInput';
@@ -107,10 +108,8 @@ const Home: React.FC = () => {
         {/* duration timer */}
         {duration && <div style={styles.durationTimer}>⏱{duration}</div>}
       </div>
-
       {/* horizontal break */}
       <div style={styles.hr} />
-
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <TrackrInput
           style={{ flexGrow: 1 }}
@@ -139,10 +138,26 @@ const Home: React.FC = () => {
         </TrackrButton>
       </div>
 
+      {/* list header */}
+      <div
+        style={{
+          margin: '24px 0 16px',
+          display: 'flex',
+          justifyContent: 'space-between',
+        }}>
+        <div style={{ color: '#fff' }}>June 18th (today)</div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <TrackrButton type="button" style={{ marginRight: 4 }}>
+            ←
+          </TrackrButton>
+          <TrackrButton type="button">→</TrackrButton>
+        </div>
+      </div>
+
       {/* list of entries */}
       <div className={css.listContainerParent}>
         <div className={css.listContainerChild}>
-          {entries.reverse().map(entry => {
+          {entries.map(entry => {
             // move to utils
             const formatTime = (date: Date | null): string => {
               const parsed = {
@@ -175,7 +190,11 @@ const Home: React.FC = () => {
                 {/* description and start-end dates */}
                 <div style={{ color: '#F9F9F9' }}>
                   <div style={{ fontSize: 14, marginBottom: 4 }}>
-                    {`${entry.description.substr(0, 24)}...`}
+                    {entry.description
+                      ? `${entry.description.substr(0, 16)}${
+                          entry.description.length > 16 ? '...' : ''
+                        }`
+                      : 'no description'}
                   </div>
                   <div style={styles.durationInTime}>
                     {formatTime(entry.startDate)} -{formatTime(entry.endDate)}
@@ -198,9 +217,28 @@ const Home: React.FC = () => {
                     ⋮
                   </button>
                 </div>
-              </div>
+              </div> // list item
             );
           })}
+        </div>
+      </div>
+
+      <div style={styles.footerContainerParent}>
+        <div style={styles.footerContainerChild}>
+          <Link to="/hi" style={{ fontSize: 14, color: '#fff' }}>
+            settings️
+          </Link>
+          <div>
+            <span
+              style={{
+                fontWeight: 'lighter',
+                color: '#d5d5d5',
+                marginRight: 8,
+              }}>
+              total
+            </span>
+            <span style={{ fontWeight: 'bold', color: '#fff' }}>00:00:00</span>
+          </div>
         </div>
       </div>
     </div>
@@ -237,6 +275,20 @@ const styles = {
     outline: 'none',
     padding: '0 1px',
     fontSize: 20,
+  } as React.CSSProperties,
+  footerContainerParent: {
+    width: '100vw',
+    position: 'absolute',
+    bottom: 0,
+    marginLeft: '-16px',
+    backgroundColor: 'rgba(255, 255, 255, .15)',
+    backdropFilter: 'blur(5px)',
+  } as React.CSSProperties,
+  footerContainerChild: {
+    margin: '12px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   } as React.CSSProperties,
 };
 

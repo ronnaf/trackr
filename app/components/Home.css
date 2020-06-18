@@ -1,7 +1,6 @@
 .listContainerParent {
-  margin-top: 24px;
   width: 100%;
-  height: 65vh;
+  height: 64vh;
   overflow: hidden;
   position: relative;
 }
@@ -13,6 +12,7 @@
   left: 0;
   right: -15px;
   overflow-y: scroll;
+  padding-bottom: 42px;
 }
 
 .listItemContainer {
