@@ -5,6 +5,7 @@ import TrackrButton from './TrackrButton';
 import TrackrSelect from './TrackrSelect';
 import TrackrInput from './TrackrInput';
 import css from './Home.css';
+import routes from '../constants/routes.json';
 
 type Timeout = ReturnType<typeof setTimeout>;
 type TimeEntry = {
@@ -35,6 +36,7 @@ const Home: React.FC = () => {
     duration: '',
   };
 
+  const [workDate, setWorkDate] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState<boolean>(false);
   const [formValues, setFormValues] = React.useState<TimeEntry>(initialEntry);
   const [entries, setEntries] = React.useState<TimeEntry[]>([]);
@@ -42,6 +44,10 @@ const Home: React.FC = () => {
   const [localInterval, setLocalInterval] = React.useState<Timeout | null>(
     null
   );
+  const [totalDuration, setTotalDuration] = React.useState<{
+    decimal: number;
+    time: string;
+  }>({ decimal: 0, time: '00:00:00' });
 
   const updateFormValues = <T,>(field: string, value: T): void => {
     setFormValues({ ...formValues, [field]: value });
@@ -74,6 +80,35 @@ const Home: React.FC = () => {
     }
   };
 
+  const calculateTotalDuration = (): void => {
+    // calculate duration in decimal
+    let totalHours = 0.0;
+    // eslint-disable-next-line no-plusplus
+    for (let i = 0; i < entries.length; i++) {
+      const element = entries[i].duration;
+      const splits = element.split(':');
+
+      const hours = parseFloat(splits[0]);
+      const minsToHours = parseFloat(splits[1]) / 60;
+      const secsToHours = parseFloat(splits[2]) / 3600 || 0;
+
+      totalHours += hours + minsToHours + secsToHours;
+    }
+
+    // calculate duration in 00:00 format based on totalHours
+    const decSplits = `${totalHours}`.split('.');
+    const hours = parseInt(decSplits[0], 10);
+    const mins = (totalHours - hours) * 60;
+
+    const minSplits = `${mins}`.split('.');
+    const hourStr = decSplits[0].length < 2 ? `0${decSplits[0]}` : decSplits[0];
+    const minStr = minSplits[0].length < 2 ? `0${minSplits[0]}` : minSplits[0];
+
+    const durationTime = `${hourStr}:${minStr}`;
+
+    setTotalDuration({ decimal: totalHours, time: durationTime });
+  };
+
   const handleButton = (): void => {
     setLoading(true);
     if (!duration) {
@@ -100,6 +135,67 @@ const Home: React.FC = () => {
     setLoading(false);
   };
 
+  const getSuffix = (date: number): 'st' | 'nd' | 'rd' | 'th' => {
+    const remainder = date % 10;
+    switch (remainder) {
+      case 1:
+        return 'st';
+      case 2:
+        return 'nd';
+      case 3:
+        return 'rd';
+      default:
+        return 'th';
+    }
+  };
+
+  const getWorkDate = (): void => {
+    const now = new Date();
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    // transfer 22 to file or something
+    if (now.getHours() < 22) {
+      // if the current time is before 10pm
+      setWorkDate(
+        `${months[now.getMonth()]} ${now.getDate()}${getSuffix(now.getDate())}`
+      );
+    } else {
+      // if the current time is after 10pm
+      // parsed date
+      const d = {
+        year: now.getFullYear(),
+        month: now.getMonth(),
+        date: now.getDate(),
+      };
+
+      const tom = new Date(d.year, d.month, d.date + 1);
+      setWorkDate(
+        `${months[tom.getMonth()]} ${tom.getDate()}${getSuffix(tom.getDate())}`
+      );
+    }
+  };
+
+  React.useEffect(() => {
+    calculateTotalDuration();
+  }, [entries.length]);
+
+  React.useEffect(() => {
+    getWorkDate();
+  }, []);
+
   return (
     <div style={{ margin: 8 }}>
       <div style={styles.titleContainer}>
@@ -108,8 +204,10 @@ const Home: React.FC = () => {
         {/* duration timer */}
         {duration && <div style={styles.durationTimer}>⏱{duration}</div>}
       </div>
+
       {/* horizontal break */}
       <div style={styles.hr} />
+
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <TrackrInput
           style={{ flexGrow: 1 }}
@@ -145,7 +243,7 @@ const Home: React.FC = () => {
           display: 'flex',
           justifyContent: 'space-between',
         }}>
-        <div style={{ color: '#fff' }}>June 18th (today)</div>
+        <div style={{ color: '#fff' }}>{workDate} (today)</div>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <TrackrButton type="button" style={{ marginRight: 4 }}>
             ←
@@ -165,7 +263,7 @@ const Home: React.FC = () => {
                 mins: date?.getMinutes() ?? 0,
               };
 
-              const meridiem = parsed.hours > 11 ? 'PM' : 'PM';
+              const meridiem = parsed.hours > 11 ? 'PM' : 'AM';
               const formattedHours = // hours in 12-hour format
                 parsed.hours > 12 ? parsed.hours - 12 : parsed.hours;
 
@@ -181,7 +279,7 @@ const Home: React.FC = () => {
 
             return (
               <div key={`${entry.id}`} className={css.listItemContainer}>
-                <div style={{ marginRight: 12 }}>
+                <div style={{ marginRight: 8 }}>
                   <span role="img" aria-label="emoji">
                     👉
                   </span>
@@ -197,7 +295,7 @@ const Home: React.FC = () => {
                       : 'no description'}
                   </div>
                   <div style={styles.durationInTime}>
-                    {formatTime(entry.startDate)} -{formatTime(entry.endDate)}
+                    {formatTime(entry.startDate)} - {formatTime(entry.endDate)}
                   </div>
                 </div>
 
@@ -225,7 +323,7 @@ const Home: React.FC = () => {
 
       <div style={styles.footerContainerParent}>
         <div style={styles.footerContainerChild}>
-          <Link to="/hi" style={{ fontSize: 14, color: '#fff' }}>
+          <Link to={routes.SETTINGS} style={{ fontSize: 14, color: '#fff' }}>
             settings️
           </Link>
           <div>
@@ -235,9 +333,11 @@ const Home: React.FC = () => {
                 color: '#d5d5d5',
                 marginRight: 8,
               }}>
-              total
+              this day
             </span>
-            <span style={{ fontWeight: 'bold', color: '#fff' }}>00:00:00</span>
+            <span style={{ fontWeight: 'bold', color: '#fff' }}>
+              {totalDuration.time} | {totalDuration.decimal.toFixed(2)}
+            </span>
           </div>
         </div>
       </div>
