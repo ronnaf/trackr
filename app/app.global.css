@@ -21,3 +21,7 @@ h1 {
   margin: 12px 0 8px;
   color: white;
 }
+
+input[type="time" i] {
+  font-family: Helvetica, Helvetica Neue, Arial, sans-serif;
+}

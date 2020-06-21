@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-use-before-define,react/jsx-one-expression-per-line */
 import React from 'react';
-import { Link } from 'react-router-dom';
-import TrackrButton from './TrackrButton';
-import TrackrSelect from './TrackrSelect';
-import TrackrInput from './TrackrInput';
-import css from './Home.css';
+import { remote } from 'electron';
+import TrackrButton from './shared/TrackrButton';
+import TrackrSelect from './shared/TrackrSelect';
+import TrackrInput from './shared/TrackrInput';
+import TrackrHeader from './shared/TrackrHeader';
+import TrackrFooter from './shared/TrackrFooter';
 import routes from '../constants/routes.json';
+import css from './Home.css';
+import fs from '../utils/trackr-fs';
 
 type Timeout = ReturnType<typeof setTimeout>;
 type TimeEntry = {
@@ -41,9 +44,7 @@ const Home: React.FC = () => {
   const [formValues, setFormValues] = React.useState<TimeEntry>(initialEntry);
   const [entries, setEntries] = React.useState<TimeEntry[]>([]);
   const [duration, setDuration] = React.useState<string>('');
-  const [localInterval, setLocalInterval] = React.useState<Timeout | null>(
-    null
-  );
+  const [localInterval, setLocalInterval] = React.useState<Timeout | null>(null);
   const [totalDuration, setTotalDuration] = React.useState<{
     decimal: number;
     time: string;
@@ -135,6 +136,21 @@ const Home: React.FC = () => {
     setLoading(false);
   };
 
+  const formatTime = (date: Date | null): string => {
+    const parsed = {
+      hours: date?.getHours() ?? 0,
+      mins: date?.getMinutes() ?? 0,
+    };
+
+    const meridiem = parsed.hours > 11 ? 'PM' : 'AM';
+    const formattedHours = parsed.hours > 12 ? parsed.hours - 12 : parsed.hours; // hours in 12-hour format
+
+    const hours = `${formattedHours < 10 ? 0 : ''}${formattedHours}`;
+    const mins = `${parsed.mins < 10 ? 0 : ''}${parsed.mins}`;
+
+    return `${hours}:${mins}${meridiem}`;
+  };
+
   const getSuffix = (date: number): 'st' | 'nd' | 'rd' | 'th' => {
     const remainder = date % 10;
     switch (remainder) {
@@ -149,6 +165,9 @@ const Home: React.FC = () => {
     }
   };
 
+  /**
+   * TODO: dont hard code 22
+   */
   const getWorkDate = (): void => {
     const now = new Date();
     const months = [
@@ -166,25 +185,14 @@ const Home: React.FC = () => {
       'December',
     ];
 
-    // transfer 22 to file or something
+    const month = months[now.getMonth()];
     if (now.getHours() < 22) {
-      // if the current time is before 10pm
-      setWorkDate(
-        `${months[now.getMonth()]} ${now.getDate()}${getSuffix(now.getDate())}`
-      );
+      // if the current time is before 10pm, set work date the day before
+      const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+      setWorkDate(`${month} ${yesterday.getDate()}${getSuffix(yesterday.getDate())}`);
     } else {
-      // if the current time is after 10pm
-      // parsed date
-      const d = {
-        year: now.getFullYear(),
-        month: now.getMonth(),
-        date: now.getDate(),
-      };
-
-      const tom = new Date(d.year, d.month, d.date + 1);
-      setWorkDate(
-        `${months[tom.getMonth()]} ${tom.getDate()}${getSuffix(tom.getDate())}`
-      );
+      // if the current time is after 10pm, set date as is
+      setWorkDate(`${month} ${now.getDate()}${getSuffix(now.getDate())}`);
     }
   };
 
@@ -196,17 +204,17 @@ const Home: React.FC = () => {
     getWorkDate();
   }, []);
 
+  /** storing and reading save files if none exists */
+  React.useEffect(() => {
+    fs.read(`${remote.app.getPath('appData')}/trackr.json`);
+  }, []);
+
   return (
     <div style={{ margin: 8 }}>
-      <div style={styles.titleContainer}>
-        <h1>trackr</h1>
-
-        {/* duration timer */}
-        {duration && <div style={styles.durationTimer}>⏱{duration}</div>}
-      </div>
-
-      {/* horizontal break */}
-      <div style={styles.hr} />
+      <TrackrHeader
+        title="trackr"
+        rightElement={() => (duration ? <div style={styles.durationTimer}>⏱{duration}</div> : null)}
+      />
 
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <TrackrInput
@@ -228,10 +236,7 @@ const Home: React.FC = () => {
           ))}
         </TrackrSelect>
 
-        <TrackrButton
-          disabled={loading}
-          onClick={handleButton}
-          style={{ padding: '6px 12px', marginLeft: 12 }}>
+        <TrackrButton disabled={loading} onClick={handleButton} style={{ padding: '6px 12px', marginLeft: 12 }}>
           {!duration ? 'start' : 'stop'}
         </TrackrButton>
       </div>
@@ -256,23 +261,6 @@ const Home: React.FC = () => {
       <div className={css.listContainerParent}>
         <div className={css.listContainerChild}>
           {entries.map(entry => {
-            // move to utils
-            const formatTime = (date: Date | null): string => {
-              const parsed = {
-                hours: date?.getHours() ?? 0,
-                mins: date?.getMinutes() ?? 0,
-              };
-
-              const meridiem = parsed.hours > 11 ? 'PM' : 'AM';
-              const formattedHours = // hours in 12-hour format
-                parsed.hours > 12 ? parsed.hours - 12 : parsed.hours;
-
-              const hours = `${formattedHours < 10 ? 0 : ''}${formattedHours}`;
-              const mins = `${parsed.mins < 10 ? 0 : ''}${parsed.mins}`;
-
-              return `${hours}:${mins}${meridiem}`;
-            };
-
             const currentProject = projects.find(project => {
               return project.key === entry.project;
             });
@@ -289,9 +277,7 @@ const Home: React.FC = () => {
                 <div style={{ color: '#F9F9F9' }}>
                   <div style={{ fontSize: 14, marginBottom: 4 }}>
                     {entry.description
-                      ? `${entry.description.substr(0, 16)}${
-                          entry.description.length > 16 ? '...' : ''
-                        }`
+                      ? `${entry.description.substr(0, 16)}${entry.description.length > 16 ? '...' : ''}`
                       : 'no description'}
                   </div>
                   <div style={styles.durationInTime}>
@@ -303,9 +289,7 @@ const Home: React.FC = () => {
                 <div style={{ flexGrow: 1, textAlign: 'right' }}>
                   <div style={{ fontSize: 15 }}>{entry.duration}</div>
                   <div style={{ fontSize: 12, marginTop: 2, color: '#272727' }}>
-                    <span style={{ background: '#F5D472', padding: '0px 4px' }}>
-                      {currentProject?.title}
-                    </span>
+                    <span style={{ background: '#F5D472', padding: '0px 4px' }}>{currentProject?.title}</span>
                   </div>
                 </div>
 
@@ -321,11 +305,10 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      <div style={styles.footerContainerParent}>
-        <div style={styles.footerContainerChild}>
-          <Link to={routes.SETTINGS} style={{ fontSize: 14, color: '#fff' }}>
-            settings️
-          </Link>
+      <TrackrFooter
+        to={routes.SETTINGS}
+        linkTitle="settings"
+        rightElement={() => (
           <div>
             <span
               style={{
@@ -339,25 +322,13 @@ const Home: React.FC = () => {
               {totalDuration.time} | {totalDuration.decimal.toFixed(2)}
             </span>
           </div>
-        </div>
-      </div>
+        )}
+      />
     </div>
   );
 };
 
 const styles = {
-  titleContainer: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  } as React.CSSProperties,
-  hr: {
-    marginBottom: 24,
-    width: 50,
-    height: 5,
-    borderRadius: 99,
-    background: '#FAD45E',
-  } as React.CSSProperties,
   durationTimer: {
     margin: '12px 0 8px',
     fontWeight: 'bold',
@@ -375,20 +346,6 @@ const styles = {
     outline: 'none',
     padding: '0 1px',
     fontSize: 20,
-  } as React.CSSProperties,
-  footerContainerParent: {
-    width: '100vw',
-    position: 'absolute',
-    bottom: 0,
-    marginLeft: '-16px',
-    backgroundColor: 'rgba(255, 255, 255, .15)',
-    backdropFilter: 'blur(5px)',
-  } as React.CSSProperties,
-  footerContainerChild: {
-    margin: '12px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   } as React.CSSProperties,
 };
 

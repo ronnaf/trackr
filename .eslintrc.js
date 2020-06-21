@@ -5,7 +5,8 @@ module.exports = {
     'import/no-extraneous-dependencies': 'off',
     'react/jsx-closing-bracket-location': 'off',
     'react/jsx-props-no-spreading': 'off',
-    'react/prop-types': 'off'
+    'react/prop-types': 'off',
+    '@typescript-eslint/no-use-before-define': 'off'
   },
   settings: {
     'import/resolver': {

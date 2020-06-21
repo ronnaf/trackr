@@ -319,7 +319,8 @@
     "trailingComma": "es5",
     "arrowParens": "avoid",
     "jsxBracketSameLine": true,
-    "singleQuote": true
+    "singleQuote": true,
+    "printWidth": 120
   },
   "stylelint": {
     "extends": [
@@ -331,10 +332,5 @@
     "extends": [
       "bliss"
     ]
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
   }
 }
