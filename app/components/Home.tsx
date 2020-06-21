@@ -1,29 +1,20 @@
 /* eslint-disable @typescript-eslint/no-use-before-define,react/jsx-one-expression-per-line */
 import React from 'react';
-import { remote } from 'electron';
 import TrackrButton from './shared/TrackrButton';
 import TrackrSelect from './shared/TrackrSelect';
 import TrackrInput from './shared/TrackrInput';
 import TrackrHeader from './shared/TrackrHeader';
 import TrackrFooter from './shared/TrackrFooter';
+import useReadSaveFile from '../hooks/use-read-save';
 import routes from '../constants/routes.json';
 import css from './Home.css';
-import fs from '../utils/trackr-fs';
+import { TimeEntry } from '../utils/result';
 
 type Timeout = ReturnType<typeof setTimeout>;
-type TimeEntry = {
-  id: string;
-  description: string;
-  project: string;
-  startDate: Date | null;
-  endDate: Date | null;
-  duration: string;
-};
 type Project = {
   key: string;
   title: string;
 };
-
 const projects: Project[] = [
   { key: 'ehrlich', title: 'Ehrlich' },
   { key: 'golive', title: 'GoLive' },
@@ -49,6 +40,8 @@ const Home: React.FC = () => {
     decimal: number;
     time: string;
   }>({ decimal: 0, time: '00:00:00' });
+
+  const saveFile = useReadSaveFile();
 
   const updateFormValues = <T,>(field: string, value: T): void => {
     setFormValues({ ...formValues, [field]: value });
@@ -165,11 +158,7 @@ const Home: React.FC = () => {
     }
   };
 
-  /**
-   * TODO: dont hard code 22
-   */
   const getWorkDate = (): void => {
-    const now = new Date();
     const months = [
       'January',
       'February',
@@ -185,8 +174,11 @@ const Home: React.FC = () => {
       'December',
     ];
 
+    const now = new Date();
+    const workdayStartTime = saveFile?.settings?.workdayStartTime;
     const month = months[now.getMonth()];
-    if (now.getHours() < 22) {
+
+    if (Date.parse(`01/01/2001 ${now.toTimeString()}`) < Date.parse(`01/01/2001 ${workdayStartTime}:00`)) {
       // if the current time is before 10pm, set work date the day before
       const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
       setWorkDate(`${month} ${yesterday.getDate()}${getSuffix(yesterday.getDate())}`);
@@ -202,12 +194,7 @@ const Home: React.FC = () => {
 
   React.useEffect(() => {
     getWorkDate();
-  }, []);
-
-  /** storing and reading save files if none exists */
-  React.useEffect(() => {
-    fs.read(`${remote.app.getPath('appData')}/trackr.json`);
-  }, []);
+  }, [saveFile]);
 
   return (
     <div style={{ margin: 8 }}>

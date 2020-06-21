@@ -1,7 +1,8 @@
 import React from 'react';
 import fs from '../utils/trackr-fs';
+import { ResultData } from '../utils/result';
 
-const useReadSaveFile = (onSuccessExtraAction?: <T>(data: T) => void) => {
+const useReadSaveFile = (onSuccessExtraAction?: (data: ResultData) => void): ResultData => {
   const [file, setFile] = React.useState();
 
   /** storing and reading save files if none exists */
@@ -11,7 +12,7 @@ const useReadSaveFile = (onSuccessExtraAction?: <T>(data: T) => void) => {
       setFile(result.data);
 
       if (onSuccessExtraAction) {
-        onSuccessExtraAction(result.data);
+        onSuccessExtraAction(result.data as ResultData);
       }
     }
   }, []);
