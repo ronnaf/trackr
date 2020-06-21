@@ -15,7 +15,7 @@ export type ResultData = {
   };
   user: {
     records: {
-      workdate: Date;
+      workDate: Date;
       entries: TimeEntry[];
     }[];
   };
@@ -28,7 +28,7 @@ export type Result = {
 };
 
 const result = {
-  success: (data: ResultData): Result => {
+  success: (data: ResultData | undefined): Result => {
     return { data, message: 'success', success: true };
   },
   failed: (message: string) => {

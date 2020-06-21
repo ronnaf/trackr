@@ -20,7 +20,7 @@ const Settings: React.FC = () => {
 
   const saveFile = useReadSaveFile(data => {
     const settings = {};
-    Object.keys(data.settings).forEach(key => {
+    Object.keys(data?.settings ?? {}).forEach(key => {
       settings[key] = data.settings?.[key];
     });
     setInputValues({ ...inputValues, ...settings });

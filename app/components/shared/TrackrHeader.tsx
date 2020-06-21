@@ -10,10 +10,10 @@ const TrackrHeader: React.FC<Props> = ({ title, rightElement: RightElement }) =>
     <>
       <div style={styles.titleContainer}>
         <h1>{title}</h1>
+        {RightElement && <RightElement />}
       </div>
 
       {/* horizontal break */}
-      {RightElement && <RightElement />}
       <div style={styles.hr} />
     </>
   );

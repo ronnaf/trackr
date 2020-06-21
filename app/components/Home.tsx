@@ -6,9 +6,10 @@ import TrackrInput from './shared/TrackrInput';
 import TrackrHeader from './shared/TrackrHeader';
 import TrackrFooter from './shared/TrackrFooter';
 import useReadSaveFile from '../hooks/use-read-save';
+import { TimeEntry } from '../utils/result';
+import trackrFs from '../utils/trackr-fs';
 import routes from '../constants/routes.json';
 import css from './Home.css';
-import { TimeEntry } from '../utils/result';
 
 type Timeout = ReturnType<typeof setTimeout>;
 type Project = {
@@ -30,7 +31,8 @@ const Home: React.FC = () => {
     duration: '',
   };
 
-  const [workDate, setWorkDate] = React.useState<string | null>(null);
+  const [workDateString, setWorkDateString] = React.useState<string | null>(null);
+  const [workDate, setWorkDate] = React.useState<Date>(new Date());
   const [loading, setLoading] = React.useState<boolean>(false);
   const [formValues, setFormValues] = React.useState<TimeEntry>(initialEntry);
   const [entries, setEntries] = React.useState<TimeEntry[]>([]);
@@ -41,7 +43,9 @@ const Home: React.FC = () => {
     time: string;
   }>({ decimal: 0, time: '00:00:00' });
 
-  const saveFile = useReadSaveFile();
+  const saveFile = useReadSaveFile(data => {
+    setEntries(data.user.records[0]?.entries ?? []);
+  });
 
   const updateFormValues = <T,>(field: string, value: T): void => {
     setFormValues({ ...formValues, [field]: value });
@@ -112,27 +116,39 @@ const Home: React.FC = () => {
       stop();
 
       // 2. store form value data to entries
-      setEntries([
-        ...entries,
-        {
-          ...formValues,
-          id: `${Math.random()}`,
-          endDate: new Date(),
-          duration,
-        },
-      ]);
+      const entry = { ...formValues, id: `${Math.random()}`, endDate: new Date(), duration };
+      const newEntries = [...entries, entry];
+      setEntries(newEntries);
 
-      // 3. clear duration + form values
+      // 3. save to trackr.json file
+      const newSave = { ...saveFile };
+      const recordIndex = saveFile?.user?.records?.findIndex(rec => {
+        const recordedDate = new Date(rec.workDate);
+        return recordedDate.getDate() === workDate?.getDate();
+      });
+
+      if (recordIndex !== -1) {
+        // if a record is found
+        newSave.user.records[recordIndex].entries.push(entry);
+        trackrFs.save(newSave);
+      } else {
+        newSave.user.records.push({ workDate, entries: newEntries });
+        trackrFs.save(newSave);
+      }
+
+      // 4. clear duration + form values
       setDuration('');
       setFormValues(initialEntry);
     }
     setLoading(false);
   };
 
-  const formatTime = (date: Date | null): string => {
+  const formatTime = (date: Date | string | null): string => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+
     const parsed = {
-      hours: date?.getHours() ?? 0,
-      mins: date?.getMinutes() ?? 0,
+      hours: d?.getHours() ?? 0,
+      mins: d?.getMinutes() ?? 0,
     };
 
     const meridiem = parsed.hours > 11 ? 'PM' : 'AM';
@@ -181,10 +197,12 @@ const Home: React.FC = () => {
     if (Date.parse(`01/01/2001 ${now.toTimeString()}`) < Date.parse(`01/01/2001 ${workdayStartTime}:00`)) {
       // if the current time is before 10pm, set work date the day before
       const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-      setWorkDate(`${month} ${yesterday.getDate()}${getSuffix(yesterday.getDate())}`);
+      setWorkDateString(`${month} ${yesterday.getDate()}${getSuffix(yesterday.getDate())}`);
+      setWorkDate(yesterday);
     } else {
       // if the current time is after 10pm, set date as is
-      setWorkDate(`${month} ${now.getDate()}${getSuffix(now.getDate())}`);
+      setWorkDateString(`${month} ${now.getDate()}${getSuffix(now.getDate())}`);
+      setWorkDate(now);
     }
   };
 
@@ -205,6 +223,7 @@ const Home: React.FC = () => {
 
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <TrackrInput
+          containerStyle={{ flexGrow: 1 }}
           style={{ flexGrow: 1 }}
           disabled={!!duration}
           placeholder="Description"
@@ -235,7 +254,7 @@ const Home: React.FC = () => {
           display: 'flex',
           justifyContent: 'space-between',
         }}>
-        <div style={{ color: '#fff' }}>{workDate} (today)</div>
+        <div style={{ color: '#fff' }}>{workDateString}</div>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <TrackrButton type="button" style={{ marginRight: 4 }}>
             ←

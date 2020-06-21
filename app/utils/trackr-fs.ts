@@ -1,6 +1,17 @@
 import fs from 'fs';
 import { remote } from 'electron';
-import result from './result';
+import result, { ResultData } from './result';
+
+const initialSettings: ResultData = {
+  settings: {
+    workdayStartTime: '22:00',
+    workdayEndTime: '',
+    workHours: 0,
+  },
+  user: {
+    records: [],
+  },
+};
 
 const trackrFs = {
   /** get default save path */
@@ -11,7 +22,7 @@ const trackrFs = {
     try {
       const path = trackrFs.getSavePath();
       fs.writeFileSync(path, JSON.stringify(value));
-      return result.success({});
+      return result.success(undefined);
     } catch (e) {
       return result.failed(e.message);
     }
@@ -25,7 +36,7 @@ const trackrFs = {
       return result.success(JSON.parse(file));
     } catch (e) {
       if (e?.code === 'ENOENT') {
-        trackrFs.save(JSON.stringify({}));
+        trackrFs.save(initialSettings);
         return result.failed('Save file non-existent, so we created one!');
       }
       return result.failed(e.message);
