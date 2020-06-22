@@ -19,6 +19,5 @@
   color: rgb(255, 255, 255);
   display: flex;
   margin-bottom: 12px;
-  padding: 4px 0;
   background-image: linear-gradient(135deg, transparent, #759281);
 }

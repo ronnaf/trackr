@@ -7,6 +7,7 @@ import TrackrHeader from './shared/TrackrHeader';
 import TrackrFooter from './shared/TrackrFooter';
 import useReadSaveFile from '../hooks/use-read-save';
 import { TimeEntry } from '../utils/result';
+import formatter from '../utils/formatter';
 import trackrFs from '../utils/trackr-fs';
 import routes from '../constants/routes.json';
 import css from './Home.css';
@@ -143,38 +144,13 @@ const Home: React.FC = () => {
     setLoading(false);
   };
 
-  const formatTime = (date: Date | string | null): string => {
-    const d = typeof date === 'string' ? new Date(date) : date;
+  /** calculate total duration if the entries change  */
+  React.useEffect(() => {
+    calculateTotalDuration();
+  }, [entries.length]);
 
-    const parsed = {
-      hours: d?.getHours() ?? 0,
-      mins: d?.getMinutes() ?? 0,
-    };
-
-    const meridiem = parsed.hours > 11 ? 'PM' : 'AM';
-    const formattedHours = parsed.hours > 12 ? parsed.hours - 12 : parsed.hours; // hours in 12-hour format
-
-    const hours = `${formattedHours < 10 ? 0 : ''}${formattedHours}`;
-    const mins = `${parsed.mins < 10 ? 0 : ''}${parsed.mins}`;
-
-    return `${hours}:${mins}${meridiem}`;
-  };
-
-  const getSuffix = (date: number): 'st' | 'nd' | 'rd' | 'th' => {
-    const remainder = date % 10;
-    switch (remainder) {
-      case 1:
-        return 'st';
-      case 2:
-        return 'nd';
-      case 3:
-        return 'rd';
-      default:
-        return 'th';
-    }
-  };
-
-  const getWorkDate = (): void => {
+  /** get current workday e.g. June 21st */
+  React.useEffect(() => {
     const months = [
       'January',
       'February',
@@ -197,21 +173,13 @@ const Home: React.FC = () => {
     if (Date.parse(`01/01/2001 ${now.toTimeString()}`) < Date.parse(`01/01/2001 ${workdayStartTime}:00`)) {
       // if the current time is before 10pm, set work date the day before
       const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-      setWorkDateString(`${month} ${yesterday.getDate()}${getSuffix(yesterday.getDate())}`);
+      setWorkDateString(`${month} ${yesterday.getDate()}${formatter.getNumberSuffix(yesterday.getDate())}`);
       setWorkDate(yesterday);
     } else {
       // if the current time is after 10pm, set date as is
-      setWorkDateString(`${month} ${now.getDate()}${getSuffix(now.getDate())}`);
+      setWorkDateString(`${month} ${now.getDate()}${formatter.getNumberSuffix(now.getDate())}`);
       setWorkDate(now);
     }
-  };
-
-  React.useEffect(() => {
-    calculateTotalDuration();
-  }, [entries.length]);
-
-  React.useEffect(() => {
-    getWorkDate();
   }, [saveFile]);
 
   return (
@@ -273,29 +241,25 @@ const Home: React.FC = () => {
 
             return (
               <div key={`${entry.id}`} className={css.listItemContainer}>
-                <div style={{ marginRight: 8 }}>
-                  <span role="img" aria-label="emoji">
-                    👉
-                  </span>
-                </div>
+                <div style={styles.pointerEmoji}>&#128073;</div>
 
                 {/* description and start-end dates */}
-                <div style={{ color: '#F9F9F9' }}>
+                <div style={{ color: '#F9F9F9', margin: '4px 0' }}>
                   <div style={{ fontSize: 14, marginBottom: 4 }}>
                     {entry.description
                       ? `${entry.description.substr(0, 16)}${entry.description.length > 16 ? '...' : ''}`
                       : 'no description'}
                   </div>
                   <div style={styles.durationInTime}>
-                    {formatTime(entry.startDate)} - {formatTime(entry.endDate)}
+                    {formatter.formatTime(entry.startDate)} - {formatter.formatTime(entry.endDate)}
                   </div>
                 </div>
 
                 {/* duration, project title */}
-                <div style={{ flexGrow: 1, textAlign: 'right' }}>
+                <div style={styles.rightListItemContainer}>
                   <div style={{ fontSize: 15 }}>{entry.duration}</div>
                   <div style={{ fontSize: 12, marginTop: 2, color: '#272727' }}>
-                    <span style={{ background: '#F5D472', padding: '0px 4px' }}>{currentProject?.title}</span>
+                    <span style={{ background: '#F5D472', padding: '0px 3px' }}>{currentProject?.title}</span>
                   </div>
                 </div>
 
@@ -345,6 +309,15 @@ const styles = {
     fontSize: 13,
     color: '#D5D5D5',
     fontWeight: 'lighter',
+  } as React.CSSProperties,
+  pointerEmoji: {
+    marginRight: 6,
+    lineHeight: '28px',
+  } as React.CSSProperties,
+  rightListItemContainer: {
+    flexGrow: 1,
+    margin: '3px 0 6px',
+    textAlign: 'right',
   } as React.CSSProperties,
   vEllipsisButton: {
     height: '100%',
