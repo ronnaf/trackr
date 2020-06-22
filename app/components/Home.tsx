@@ -5,6 +5,7 @@ import TrackrSelect from './shared/TrackrSelect';
 import TrackrInput from './shared/TrackrInput';
 import TrackrHeader from './shared/TrackrHeader';
 import TrackrFooter from './shared/TrackrFooter';
+import TrackrModal from './shared/TrackrModal';
 import useReadSaveFile from '../hooks/use-read-save';
 import { TimeEntry } from '../utils/result';
 import formatter from '../utils/formatter';
@@ -26,7 +27,7 @@ const Home: React.FC = () => {
   const initialEntry: TimeEntry = {
     id: '',
     description: '',
-    project: projects[0].key,
+    project: projects[1].key,
     startDate: null,
     endDate: null,
     duration: '',
@@ -37,6 +38,8 @@ const Home: React.FC = () => {
   const [loading, setLoading] = React.useState<boolean>(false);
   const [formValues, setFormValues] = React.useState<TimeEntry>(initialEntry);
   const [entries, setEntries] = React.useState<TimeEntry[]>([]);
+  const [currentEntry, setCurrentEntry] = React.useState<TimeEntry>(initialEntry);
+  const [isModalOpen, setModalOpen] = React.useState<boolean>(false);
   const [duration, setDuration] = React.useState<string>('');
   const [localInterval, setLocalInterval] = React.useState<Timeout | null>(null);
   const [totalDuration, setTotalDuration] = React.useState<{
@@ -108,7 +111,7 @@ const Home: React.FC = () => {
     setTotalDuration({ decimal: totalHours, time: durationTime });
   };
 
-  const handleButton = (): void => {
+  const handleRecordButton = (): void => {
     setLoading(true);
     if (!duration) {
       start();
@@ -198,6 +201,7 @@ const Home: React.FC = () => {
           onChange={e => updateFormValues('description', e.target.value)}
           value={formValues.description}
         />
+
         <TrackrSelect
           style={{ marginLeft: 4 }}
           disabled={!!duration}
@@ -210,24 +214,19 @@ const Home: React.FC = () => {
           ))}
         </TrackrSelect>
 
-        <TrackrButton disabled={loading} onClick={handleButton} style={{ padding: '6px 12px', marginLeft: 12 }}>
+        <TrackrButton disabled={loading} onClick={handleRecordButton} style={{ padding: '6px 12px', marginLeft: 12 }}>
           {!duration ? 'start' : 'stop'}
         </TrackrButton>
       </div>
 
       {/* list header */}
-      <div
-        style={{
-          margin: '24px 0 16px',
-          display: 'flex',
-          justifyContent: 'space-between',
-        }}>
+      <div style={styles.listHeaderContainer}>
         <div style={{ color: '#fff' }}>{workDateString}</div>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <TrackrButton type="button" style={{ marginRight: 4 }}>
-            ←
+          <TrackrButton type="button">&larr;</TrackrButton>
+          <TrackrButton type="button" style={{ marginLeft: 4 }}>
+            &rarr;
           </TrackrButton>
-          <TrackrButton type="button">→</TrackrButton>
         </div>
       </div>
 
@@ -247,7 +246,7 @@ const Home: React.FC = () => {
                 <div style={{ color: '#F9F9F9', margin: '4px 0' }}>
                   <div style={{ fontSize: 14, marginBottom: 4 }}>
                     {entry.description
-                      ? `${entry.description.substr(0, 16)}${entry.description.length > 16 ? '...' : ''}`
+                      ? `${entry.description.substr(0, 20)}${entry.description.length > 16 ? '...' : ''}`
                       : 'no description'}
                   </div>
                   <div style={styles.durationInTime}>
@@ -265,8 +264,14 @@ const Home: React.FC = () => {
 
                 {/* vertical ellipsis (options) */}
                 <div style={{ marginLeft: 6 }}>
-                  <button type="button" style={styles.vEllipsisButton}>
-                    ⋮
+                  <button
+                    className={css.ellipsisButton}
+                    type="button"
+                    onClick={() => {
+                      setCurrentEntry(entry);
+                      setModalOpen(true);
+                    }}>
+                    &#8942;
                   </button>
                 </div>
               </div> // list item
@@ -275,19 +280,26 @@ const Home: React.FC = () => {
         </div>
       </div>
 
+      {/* modal */}
+      {isModalOpen && (
+        <TrackrModal
+          text={currentEntry.description}
+          subtext={`${formatter.formatTime(currentEntry.startDate)} - ${formatter.formatTime(currentEntry.endDate)} | ${
+            currentEntry.duration
+          }`} // subtext: 07:50PM - 07:50PM | 00:00:09
+          onClose={() => {
+            setCurrentEntry(initialEntry);
+            setModalOpen(false);
+          }}
+        />
+      )}
+
       <TrackrFooter
         to={routes.SETTINGS}
         linkTitle="settings"
         rightElement={() => (
           <div>
-            <span
-              style={{
-                fontWeight: 'lighter',
-                color: '#d5d5d5',
-                marginRight: 8,
-              }}>
-              this day
-            </span>
+            <span style={styles.lighterText}>this day</span>
             <span style={{ fontWeight: 'bold', color: '#fff' }}>
               {totalDuration.time} | {totalDuration.decimal.toFixed(2)}
             </span>
@@ -310,6 +322,11 @@ const styles = {
     color: '#D5D5D5',
     fontWeight: 'lighter',
   } as React.CSSProperties,
+  listHeaderContainer: {
+    margin: '24px 0 16px',
+    display: 'flex',
+    justifyContent: 'space-between',
+  } as React.CSSProperties,
   pointerEmoji: {
     marginRight: 6,
     lineHeight: '28px',
@@ -319,12 +336,10 @@ const styles = {
     margin: '3px 0 6px',
     textAlign: 'right',
   } as React.CSSProperties,
-  vEllipsisButton: {
-    height: '100%',
-    border: 0,
-    outline: 'none',
-    padding: '0 1px',
-    fontSize: 20,
+  lighterText: {
+    fontWeight: 'lighter',
+    color: '#d5d5d5',
+    marginRight: 8,
   } as React.CSSProperties,
 };
 

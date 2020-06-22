@@ -43,7 +43,7 @@ const Settings: React.FC = () => {
 
   return (
     <div style={{ margin: 8 }}>
-      <TrackrHeader title="Settings" />
+      <TrackrHeader title="settings" />
       {showAlert && <TrackrAlert message="Saved!" />}
 
       <TrackrInput

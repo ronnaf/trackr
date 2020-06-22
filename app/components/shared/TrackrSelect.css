@@ -7,3 +7,11 @@
   padding: 8px 12px;
   border-radius: 2px;
 }
+
+.trackrSelect:hover {
+  opacity: 0.90;
+}
+
+.trackrSelect:active {
+  opacity: 0.0;
+}
