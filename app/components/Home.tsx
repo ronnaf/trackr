@@ -12,13 +12,9 @@ import formatter from '../utils/formatter';
 import trackrFs from '../utils/trackr-fs';
 import routes from '../constants/routes.json';
 import css from './Home.css';
+import TrackrTextarea from './shared/TrackrTextarea';
 
-type Timeout = ReturnType<typeof setTimeout>;
-type Project = {
-  key: string;
-  title: string;
-};
-const projects: Project[] = [
+const projects: { key: string; title: string }[] = [
   { key: 'ehrlich', title: 'Ehrlich' },
   { key: 'golive', title: 'GoLive' },
 ];
@@ -41,7 +37,7 @@ const Home: React.FC = () => {
   const [currentEntry, setCurrentEntry] = React.useState<TimeEntry>(initialEntry);
   const [isModalOpen, setModalOpen] = React.useState<boolean>(false);
   const [duration, setDuration] = React.useState<string>('');
-  const [localInterval, setLocalInterval] = React.useState<Timeout | null>(null);
+  const [localInterval, setLocalInterval] = React.useState<ReturnType<typeof setTimeout> | null>(null);
   const [totalDuration, setTotalDuration] = React.useState<{
     decimal: number;
     time: string;
@@ -111,6 +107,14 @@ const Home: React.FC = () => {
     setTotalDuration({ decimal: totalHours, time: durationTime });
   };
 
+  const getCurrentRecordIndex = (): number => {
+    const recordIndex = saveFile?.user?.records?.findIndex(rec => {
+      const recordedDate = new Date(rec.workDate);
+      return recordedDate.getDate() === workDate?.getDate();
+    });
+    return recordIndex;
+  };
+
   const handleRecordButton = (): void => {
     setLoading(true);
     if (!duration) {
@@ -126,10 +130,7 @@ const Home: React.FC = () => {
 
       // 3. save to trackr.json file
       const newSave = { ...saveFile };
-      const recordIndex = saveFile?.user?.records?.findIndex(rec => {
-        const recordedDate = new Date(rec.workDate);
-        return recordedDate.getDate() === workDate?.getDate();
-      });
+      const recordIndex = getCurrentRecordIndex();
 
       if (recordIndex !== -1) {
         // if a record is found
@@ -145,6 +146,25 @@ const Home: React.FC = () => {
       setFormValues(initialEntry);
     }
     setLoading(false);
+  };
+
+  const handleDelete = (id: string): void => {
+    if (entries.length) {
+      const entryIndex = entries.findIndex(entry => entry.id === id);
+
+      // local state changes
+      const newEntries = [...entries];
+      newEntries.splice(entryIndex, 1);
+      setEntries(newEntries);
+
+      // save to trackr.json file
+      const newSave = { ...saveFile };
+      const recordIndex = getCurrentRecordIndex();
+      if (recordIndex !== -1) {
+        newSave.user.records[recordIndex].entries.splice(entryIndex, 1);
+        trackrFs.save(newSave);
+      }
+    }
   };
 
   /** calculate total duration if the entries change  */
@@ -214,6 +234,7 @@ const Home: React.FC = () => {
           ))}
         </TrackrSelect>
 
+        {/* record button */}
         <TrackrButton disabled={loading} onClick={handleRecordButton} style={{ padding: '6px 12px', marginLeft: 12 }}>
           {!duration ? 'start' : 'stop'}
         </TrackrButton>
@@ -281,29 +302,44 @@ const Home: React.FC = () => {
       </div>
 
       {/* modal */}
-      {isModalOpen && (
-        <TrackrModal
-          text={currentEntry.description}
-          subtext={`${formatter.formatTime(currentEntry.startDate)} - ${formatter.formatTime(currentEntry.endDate)} | ${
-            currentEntry.duration
-          }`} // subtext: 07:50PM - 07:50PM | 00:00:09
-          onClose={() => {
-            setCurrentEntry(initialEntry);
-            setModalOpen(false);
-          }}
-        />
-      )}
+      <TrackrModal
+        visible={isModalOpen}
+        onClose={() => {
+          setCurrentEntry(initialEntry);
+          setModalOpen(false);
+        }}
+        leftComponent={() => (
+          <React.Fragment>
+            <TrackrButton style={{ marginRight: 4 }}>edit</TrackrButton>
+            <TrackrButton
+              style={{ marginRight: 4 }}
+              onClick={() => {
+                handleDelete(currentEntry.id);
+                setModalOpen(false);
+              }}>
+              delete
+            </TrackrButton>
+          </React.Fragment>
+        )}>
+        <TrackrTextarea rows={1} style={styles.textArea} defaultValue={'make it with you get out of my head pleasez'} />
+        <div style={{ fontWeight: 'lighter', fontSize: 14, marginTop: 8 }}>
+          {/* subtext: 07:50PM - 07:50PM | 00:00:09 */}
+          {formatter.formatTime(currentEntry.startDate)} - {formatter.formatTime(currentEntry.endDate)} |{' '}
+          {currentEntry.duration}
+        </div>
+      </TrackrModal>
 
+      {/* footer */}
       <TrackrFooter
         to={routes.SETTINGS}
         linkTitle="settings"
         rightElement={() => (
-          <div>
+          <React.Fragment>
             <span style={styles.lighterText}>this day</span>
             <span style={{ fontWeight: 'bold', color: '#fff' }}>
               {totalDuration.time} | {totalDuration.decimal.toFixed(2)}
             </span>
-          </div>
+          </React.Fragment>
         )}
       />
     </div>
@@ -340,6 +376,16 @@ const styles = {
     fontWeight: 'lighter',
     color: '#d5d5d5',
     marginRight: 8,
+  } as React.CSSProperties,
+  textArea: {
+    padding: 0,
+    fontSize: 16,
+    color: '#333333',
+    background: '#F5D472',
+    width: '100%',
+    overflow: 'hidden',
+    resize: 'vertical',
+    minHeight: 18,
   } as React.CSSProperties,
 };
 

@@ -2,22 +2,22 @@ import React from 'react';
 import TrackrButton from './TrackrButton';
 
 type Props = {
-  text: string;
-  subtext: string;
+  visible: boolean;
   onClose: () => void;
+  /** component(s) on the lower left corner of the modal */
+  leftComponent?: React.ComponentType;
 };
 
-const TrackrModal: React.FC<Props> = ({ text, subtext, onClose }) => {
+const TrackrModal: React.FC<Props> = ({ visible, children, onClose, leftComponent: LeftComponent }) => {
+  if (!visible) {
+    return null;
+  }
   return (
     <div style={styles.modalContainer}>
       <div style={styles.modalContent}>
-        <div>{text}</div>
-        <div style={{ fontWeight: 'lighter', fontSize: 14, marginTop: 8 }}>{subtext}</div>
+        {children}
         <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between' }}>
-          <div>
-            <TrackrButton style={{ marginRight: 4 }}>edit</TrackrButton>
-            <TrackrButton style={{ marginRight: 4 }}>delete</TrackrButton>
-          </div>
+          <div>{LeftComponent && <LeftComponent />}</div>
           <TrackrButton onClick={onClose}>close</TrackrButton>
         </div>
       </div>

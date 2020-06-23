@@ -14,7 +14,7 @@ const TrackrFooter: React.FC<Props> = ({ to, linkTitle, rightElement: RightEleme
         <Link to={to} style={{ fontSize: 14, color: '#fff' }}>
           {linkTitle}
         </Link>
-        {RightElement && <RightElement />}
+        <div>{RightElement && <RightElement />}</div>
       </div>
     </div>
   );
