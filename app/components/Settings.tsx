@@ -22,6 +22,7 @@ const Settings: React.FC = () => {
 
   const [showAlert, setShowAlert] = React.useState(false);
   const [inputValues, setInputValues] = React.useState(initialSettings);
+  const [timeoutInstance, setTimeoutInstance] = React.useState<>(undefined);
 
   const saveFile = useReadSaveFile(data => {
     const settings = {};
@@ -63,11 +64,18 @@ const Settings: React.FC = () => {
     const result = trackrFs.save(newSave);
     if (result.success) {
       setShowAlert(true);
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         setShowAlert(false);
       }, 3000);
+      setTimeoutInstance(timeout);
     }
   };
+
+  React.useEffect(() => {
+    return () => {
+      clearTimeout(timeoutInstance);
+    };
+  });
 
   return (
     <div style={{ margin: 8 }}>

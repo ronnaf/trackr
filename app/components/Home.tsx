@@ -208,13 +208,18 @@ const Home: React.FC = () => {
   }, [saveFile]);
 
   React.useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
     if (projects.length) {
       updateFormValues('project', projects[0].key);
       setShowAlert(true);
-      setTimeout(() => {
+      timeout = setTimeout(() => {
         setShowAlert(false);
-      }, 3000);
+      }, 5000);
     }
+
+    return () => {
+      clearTimeout(timeout);
+    };
   }, [projects.length]);
 
   return (
