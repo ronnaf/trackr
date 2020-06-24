@@ -7,6 +7,7 @@ const initialSettings: ResultData = {
     workdayStartTime: '22:00',
     workdayEndTime: '',
     workHours: 0,
+    projects: [],
   },
   user: {
     records: [],

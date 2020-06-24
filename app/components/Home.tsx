@@ -13,22 +13,23 @@ import trackrFs from '../utils/trackr-fs';
 import routes from '../constants/routes.json';
 import css from './Home.css';
 import TrackrTextarea from './shared/TrackrTextarea';
+import TrackrAlert from './shared/TrackrAlert';
 
-const projects: { key: string; title: string }[] = [
-  { key: 'ehrlich', title: 'Ehrlich' },
-  { key: 'golive', title: 'GoLive' },
-];
-
+/**
+ * this is a giant mess-- refactor
+ */
 const Home: React.FC = () => {
   const initialEntry: TimeEntry = {
     id: '',
     description: '',
-    project: projects[1].key,
+    project: '',
     startDate: null,
     endDate: null,
     duration: '',
   };
 
+  const [showAlert, setShowAlert] = React.useState(false);
+  const [projects, setProjects] = React.useState<{ key: string; title: string }[]>([]);
   const [workDateString, setWorkDateString] = React.useState<string | null>(null);
   const [workDate, setWorkDate] = React.useState<Date>(new Date());
   const [loading, setLoading] = React.useState<boolean>(false);
@@ -45,6 +46,7 @@ const Home: React.FC = () => {
 
   const saveFile = useReadSaveFile(data => {
     setEntries(data.user.records[0]?.entries ?? []);
+    setProjects(data.settings.projects);
   });
 
   const updateFormValues = <T,>(field: string, value: T): void => {
@@ -205,12 +207,24 @@ const Home: React.FC = () => {
     }
   }, [saveFile]);
 
+  React.useEffect(() => {
+    if (projects.length) {
+      updateFormValues('project', projects[0].key);
+      setShowAlert(true);
+      setTimeout(() => {
+        setShowAlert(false);
+      }, 3000);
+    }
+  }, [projects.length]);
+
   return (
     <div style={{ margin: 8 }}>
       <TrackrHeader
         title="trackr"
         rightElement={() => (duration ? <div style={styles.durationTimer}>⏱{duration}</div> : null)}
       />
+
+      {showAlert && <TrackrAlert message="A default project was set" />}
 
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <TrackrInput
@@ -321,7 +335,7 @@ const Home: React.FC = () => {
             </TrackrButton>
           </React.Fragment>
         )}>
-        <TrackrTextarea rows={1} style={styles.textArea} defaultValue={'make it with you get out of my head pleasez'} />
+        <TrackrTextarea rows={1} style={styles.textArea} defaultValue={currentEntry.description} />
         <div style={{ fontWeight: 'lighter', fontSize: 14, marginTop: 8 }}>
           {/* subtext: 07:50PM - 07:50PM | 00:00:09 */}
           {formatter.formatTime(currentEntry.startDate)} - {formatter.formatTime(currentEntry.endDate)} |{' '}

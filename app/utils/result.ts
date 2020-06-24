@@ -12,6 +12,7 @@ export type ResultData = {
     workdayStartTime: string;
     workdayEndTime: string;
     workHours: number;
+    projects: { key: string; title: string }[];
   };
   user: {
     records: {

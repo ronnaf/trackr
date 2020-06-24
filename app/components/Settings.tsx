@@ -8,8 +8,13 @@ import useReadSaveFile from '../hooks/use-read-save';
 import routes from '../constants/routes.json';
 import trackrFs from '../utils/trackr-fs';
 
+/**
+ * another giant mess-- refactor
+ * @constructor
+ */
 const Settings: React.FC = () => {
   const initialSettings = {
+    projects: [] as { key: string; title: string }[],
     workdayStartTime: '',
     workdayEndTime: '',
     workHours: 0,
@@ -28,6 +33,29 @@ const Settings: React.FC = () => {
 
   const handleInput = <T,>(field: string, value: T) => {
     setInputValues({ ...inputValues, [field]: value });
+  };
+
+  const handleArrayInput = (index: number, value: string): void => {
+    const newProjects = [...inputValues.projects];
+    newProjects[index].title = value;
+    setInputValues({ ...inputValues, projects: newProjects });
+  };
+
+  const removeArrayInput = (index: number): void => {
+    if (inputValues.projects.length > 1) {
+      const newProjects = [...inputValues.projects];
+      newProjects.splice(index, 1);
+      setInputValues({ ...inputValues, projects: newProjects });
+    }
+  };
+
+  const handleAddProject = () => {
+    const key = Math.random()
+      .toString(36)
+      .substring(2);
+
+    const newProjects = [...inputValues.projects, { key, title: '' }];
+    setInputValues({ ...inputValues, projects: newProjects });
   };
 
   const handleSave = () => {
@@ -71,6 +99,31 @@ const Settings: React.FC = () => {
         onChange={e => handleInput('workHours', e.target.value)}
       />
 
+      <div style={{ display: 'flex' }}>
+        <div style={{ width: '56%' }}>
+          <div style={styles.label}>projects</div>
+          <TrackrButton onClick={handleAddProject}>Add Project</TrackrButton>
+        </div>
+        <div style={{ width: '44%' }}>
+          {!inputValues.projects.length && <span style={{ color: '#fff' }}>none</span>}
+          {inputValues.projects.map((project, i) => {
+            return (
+              <div key={project.key} style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
+                <TrackrInput
+                  style={{ fontSize: 14, padding: '3px 8px', width: '100%' }}
+                  onChange={e => handleArrayInput(i, e.target.value)}
+                  value={inputValues.projects[i].title}
+                  type="text"
+                />
+                <TrackrButton style={{ height: 20, marginLeft: 4 }} onClick={() => removeArrayInput(i)}>
+                  <span>x</span>
+                </TrackrButton>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <TrackrFooter
         to={routes.HOME}
         linkTitle="← home"
@@ -82,6 +135,15 @@ const Settings: React.FC = () => {
       />
     </div>
   );
+};
+
+const styles = {
+  label: {
+    fontSize: 15,
+    fontWeight: 'lighter',
+    color: '#fff',
+    marginBottom: 14,
+  } as React.CSSProperties,
 };
 
 export default Settings;
