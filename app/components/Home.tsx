@@ -214,7 +214,7 @@ const Home: React.FC = () => {
       setShowAlert(true);
       timeout = setTimeout(() => {
         setShowAlert(false);
-      }, 5000);
+      }, 2000);
     }
 
     return () => {

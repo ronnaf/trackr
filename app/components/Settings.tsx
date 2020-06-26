@@ -66,7 +66,7 @@ const Settings: React.FC = () => {
       setShowAlert(true);
       const timeout = setTimeout(() => {
         setShowAlert(false);
-      }, 3000);
+      }, 2000);
       setTimeoutInstance(timeout);
     }
   };
